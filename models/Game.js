@@ -3,8 +3,8 @@ const { Schema } = mongoose;
 
 const gameSchema = new Schema({
   admin: String,
-  close: Boolean,
-  started: Boolean,
+  close: { type: Boolean, default: false },
+  started: { type: Boolean, default: false },
   code: String,
   title: String,
   description: String,
@@ -14,6 +14,4 @@ const gameSchema = new Schema({
   },
 });
 
-const Game = mongoose.model("Game", gameSchema);
-
-module.exports = Game;
+module.exports = mongoose.model("Game", gameSchema);

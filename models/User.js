@@ -18,9 +18,6 @@ const userSchema = new Schema({
   },
   token: String,
   hash: String,
-  salt: String,
 });
 
-const User = mongoose.model("User", userSchema);
-
-module.exports = User;
+module.exports = mongoose.model("User", userSchema);

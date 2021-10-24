@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const validator = require("email-validator");
+const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
 
@@ -17,7 +18,8 @@ router.post("/register", async (req, res) => {
           .status(400)
           .json({ message: "An email is already linked to an account" });
       } else {
-        const hash = await bcrypt.hash(password, 10);
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
         const newUser = new User({
           email: email,
           account: {
@@ -54,20 +56,21 @@ router.post("/login", async (req, res) => {
       if (!user) {
         res.status(400).json({ message: `User ${email} not found 😰` });
       } else {
-        // TODO: JWT for tokens
-        const token = "test";
-
-        if (!bcrypt.compare(password, user.hash)) {
+        // TODO: expiration ??
+        // const expireIn = 24 * 60 * 60;
+        const token = jwt.sign({ _id: user._id }, process.env.SECRET_KEY);
+        const comparePassword = await bcrypt.compare(password, user.hash);
+        if (comparePassword === false) {
           res.status(401).json({
             message: `Wrong password, you are not authorized to login 😡`,
           });
         } else {
           user.token = token;
           await user.save();
+          res.header("Authorization", "Bearer " + token);
           res.json({
             message: "Login successful 👋",
             _id: user._id,
-            token: user.token,
             email: user.email,
             account: user.account,
           });
