@@ -7,6 +7,7 @@ const cors = require("cors");
 
 const Player = require("./models/Player");
 const Game = require("./models/Game");
+const User = require("./models/User");
 
 const app = express();
 const httpServer = createServer(app);
@@ -32,9 +33,11 @@ const io = new Server(httpServer, {
 });
 
 let users = [];
+let interval;
 
-const addUser = (userId, socketId) => {
-  !users.some((user) => user.id === userId) && users.push({ userId, socketId });
+const addUser = (userToken, socketId) => {
+  !users.some((user) => user.id === userToken) &&
+    users.push({ userToken, socketId });
 };
 
 const removeUser = (socketId) => {
@@ -47,12 +50,25 @@ const getUser = (userId) => {
 
 io.on("connection", async (socket) => {
   //when connect
-  console.log("A user connected.");
+  console.log("New client connected");
 
   //take userId and socketId from user
-  socket.on("addUser", (userId) => {
-    addUser(userId, socket.id);
-    io.emit("getUsers", users);
+  socket.on("addUser", (userToken) => {
+    addUser(userToken, socket.id);
+  });
+
+  //send previousCode
+  socket.on("previousCode", async (senderToken) => {
+    try {
+      const user = await User.findOne({ token: senderToken });
+      const game = await Game.findOne({ admin: user.id });
+      const previousCode = game.code;
+      io.emit("getPreviousCode", {
+        previousCode,
+      });
+    } catch (error) {
+      // check error
+    }
   });
 
   //send startGame
@@ -100,8 +116,10 @@ io.on("connection", async (socket) => {
   //when disconnect
   socket.on("disconnect", () => {
     console.log("A user disconnected!");
-    removeUser(socket.id);
-    io.emit("getUsers", users);
+    console.log("Client disconnected");
+    clearInterval(interval);
+    // removeUser(socket.id);
+    // io.emit("getUsers", users);
   });
 });
 
