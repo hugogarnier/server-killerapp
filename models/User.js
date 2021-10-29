@@ -16,6 +16,17 @@ const userSchema = new Schema({
       type: String,
     },
   },
+  games: [
+    {
+      code: String,
+      action: String,
+      alive: { type: Boolean, default: true },
+      playerToKill: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    },
+  ],
   token: String,
   hash: String,
 });

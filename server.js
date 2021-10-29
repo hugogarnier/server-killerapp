@@ -5,7 +5,6 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 
-const Player = require("./models/Player");
 const Game = require("./models/Game");
 const User = require("./models/User");
 
@@ -53,34 +52,41 @@ io.on("connection", async (socket) => {
   console.log("New client connected");
 
   //take userId and socketId from user
-  socket.on("addUser", (userToken) => {
-    addUser(userToken, socket.id);
-  });
+  // socket.on("addUser", (userToken) => {
+  //   addUser(userToken, socket.id);
+  // });
 
   //send previousCode
-  socket.on("previousCode", async (senderToken) => {
+  socket.on("previousCodes", async (senderToken, callback) => {
     try {
       const user = await User.findOne({ token: senderToken });
-      const game = await Game.findOne({ admin: user.id });
-      const previousCode = game.code;
-      io.emit("getPreviousCode", {
-        previousCode,
+      // const games = await User.find({ admin: user.id });
+      const previousCodes = user.games.map((element) => element.code);
+      // const keys = Object.keys(user.games[0]);
+      console.log(previousCodes);
+
+      callback({
+        previousCodes: previousCodes,
       });
     } catch (error) {
       // check error
     }
   });
 
-  //send startGame
-  socket.on("startGame", ({ senderId }) => {
+  //send User info
+  socket.on("userInfo", async (senderToken, callback) => {
     try {
-      const user = getUser(senderId);
-      io.to(user.socketId).emit("getStartGame", {
-        newPlayerToKill,
-        newAction,
+      const user = await User.findOne({ token: senderToken });
+      const game = await Game.findOne({ code: user.game.code });
+      callback({
+        started: game.started,
+        close: game.close,
+        firstname: user.account.firstname,
+        lastname: user.account.lastname,
+        alive: user.game.alive,
       });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      // check error
     }
   });
 
@@ -115,9 +121,7 @@ io.on("connection", async (socket) => {
 
   //when disconnect
   socket.on("disconnect", () => {
-    console.log("A user disconnected!");
     console.log("Client disconnected");
-    clearInterval(interval);
     // removeUser(socket.id);
     // io.emit("getUsers", users);
   });
