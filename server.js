@@ -32,7 +32,6 @@ const io = new Server(httpServer, {
 });
 
 let users = [];
-let interval;
 
 const addUser = (userToken, socketId) => {
   !users.some((user) => user.id === userToken) &&
@@ -60,11 +59,14 @@ io.on("connection", async (socket) => {
   socket.on("previousCodes", async (senderToken, callback) => {
     try {
       const user = await User.findOne({ token: senderToken });
-      // const games = await User.find({ admin: user.id });
-      const previousCodes = user.games.map((element) => element.code);
-      // const keys = Object.keys(user.games[0]);
-      console.log(previousCodes);
-
+      const previousCodes = user.status.map((element) => {
+        const rObj = {};
+        user.id === element.admin ? (rObj.admin = true) : (rObj.admin = false);
+        rObj.code = element.code;
+        rObj.alive = element.alive;
+        rObj.id = element.id;
+        return rObj;
+      });
       callback({
         previousCodes: previousCodes,
       });
@@ -74,17 +76,24 @@ io.on("connection", async (socket) => {
   });
 
   //send User info
-  socket.on("userInfo", async (senderToken, callback) => {
+  socket.on("userInfo", async (senderToken, code, callback) => {
     try {
-      const user = await User.findOne({ token: senderToken });
-      const game = await Game.findOne({ code: user.game.code });
-      callback({
-        started: game.started,
-        close: game.close,
-        firstname: user.account.firstname,
-        lastname: user.account.lastname,
-        alive: user.game.alive,
-      });
+      const user = await User.findOne({ token: senderToken }).populate(
+        "status"
+      );
+      const game = await Game.findOne({ code: code });
+      if (user) {
+        const player = await User.findOne({ token: senderToken }).select({
+          status: { $elemMatch: { gameId: game.id } },
+        });
+        callback({
+          started: game.started,
+          close: game.close,
+          firstname: user.account.firstname,
+          lastname: user.account.lastname,
+          alive: player.status[0].alive,
+        });
+      }
     } catch (error) {
       // check error
     }

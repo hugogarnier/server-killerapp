@@ -16,15 +16,14 @@ const userSchema = new Schema({
       type: String,
     },
   },
-  games: [
+  status: [
     {
-      code: String,
+      playerToKill: String,
       action: String,
       alive: { type: Boolean, default: true },
-      playerToKill: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
+      gameId: String,
+      code: String,
+      admin: String,
     },
   ],
   token: String,
