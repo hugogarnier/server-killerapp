@@ -123,8 +123,10 @@ io.on("connection", async (socket) => {
       if (user) {
         const data = {
           started: game.started,
+          playerToKill: user.status.playerToKill,
+          action: user.status.action,
         };
-        socket.to("game").emit("startGame", data);
+        io.to("game").emit("startGame", data);
       }
     } catch (error) {
       // check error

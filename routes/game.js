@@ -17,11 +17,13 @@ router.post("/newgame", isAuthentificated, async (req, res) => {
       // const user = await User.findById(req.user.id).populate("status");
 
       try {
+        let randomNumber = Math.floor(Math.random() * 100 + 1);
         newGame.admin = req.user.id;
         // for one game
         user.status.code = newGame.code;
         user.status.gameId = newGame.id;
         user.status.admin = newGame.admin;
+        user.status.randomNumber = randomNumber;
         // if several games
         // user.status.push({
         //   admin: newGame.admin,
@@ -60,6 +62,8 @@ router.post("/entergame", isAuthentificated, async (req, res) => {
 
     if (!isAlreadyIn.status.code /*isAlreadyIn.status.length === 0*/) {
       try {
+        let randomNumber = Math.floor(Math.random() * 100 + 1);
+        user.status.randomNumber = randomNumber;
         user.status.code = game.code;
         user.status.gameId = game.id;
         // if more than one game
@@ -111,8 +115,43 @@ router.post("/startgame", isAuthentificated, async (req, res) => {
   const game = await Game.findOne({ code: req.body.code });
   if (game) {
     try {
+      const users = await User.find({ code: req.body.code }).populate("status");
+      users.sort((a, b) => {
+        if (a.status.randomNumber < b.status.randomNumber) return -1;
+        if (a.status.randomNumber > b.status.randomNumber) return 1;
+        return 0;
+      });
+
+      const actions = await Action.find();
+
+      let userIndex = 0;
+      const stockageRandomActionNumber = [];
+      users.map((user) => {
+        const randomActionNumber = Math.floor(Math.random() * 4 + 1);
+        if (stockageRandomActionNumber.includes(randomActionNumber)) {
+          randomActionNumber = Math.floor(Math.random() * 4 + 1);
+        }
+        stockageRandomActionNumber.push(randomActionNumber);
+        const action = actions.filter(
+          (action) => action.number === randomActionNumber
+        );
+
+        if (users.length - 1 === userIndex) {
+          user.status.playerToKill = users[0].account.firstname;
+          user.status.action = action[0].action;
+        } else {
+          user.status.playerToKill = users[userIndex + 1].account.firstname;
+          user.status.action = action[0].action;
+          userIndex++;
+        }
+      });
+
       game.started = true;
+
       await game.save();
+      for (let user of users) {
+        await user.save();
+      }
 
       res.status(200).json(game);
     } catch (err) {

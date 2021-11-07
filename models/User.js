@@ -20,6 +20,7 @@ const userSchema = new Schema({
   status: {
     playerToKill: String,
     action: String,
+    randomNumber: Number,
     alive: { type: Boolean, default: true },
     gameId: String,
     code: String,
