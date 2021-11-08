@@ -87,23 +87,44 @@ router.post("/entergame", isAuthentificated, async (req, res) => {
   }
 });
 
-//add player to a game
+//delete a game
 router.post("/deletegame", isAuthentificated, async (req, res) => {
   const user = await User.findById(req.user.id)
     .populate("status")
     .select("account status");
-  if (user) {
-    try {
-      user.status = {
-        code: undefined,
-        gameId: undefined,
-      };
-      user.save();
-      // await user.save();
 
-      res.status(200).json(user);
-    } catch (err) {
-      res.status(500).json(err);
+  if (user) {
+    if (user.status.admin) {
+      try {
+        // const game = await Game.findOne({ code: req.body.code }).populate({
+        //   path: "players",
+        //   populate: { path: "status" },
+        // });
+
+        const users = await User.find({
+          "status.code": req.body.code,
+        }).populate("status");
+
+        const res = users.updateMany({ $set: { "status.code": "" } });
+        console.log(res.acknowledged);
+
+        await Game.findOneAndDelete({ code: req.body.code });
+        await user.save();
+        res.status(200).json(user);
+      } catch (err) {
+        res.status(500).json(err);
+      }
+    } else {
+      try {
+        user.status = {
+          code: undefined,
+          gameId: undefined,
+        };
+        await user.save();
+        res.status(200).json(user);
+      } catch (err) {
+        res.status(500).json(err);
+      }
     }
   } else {
     res.status(400).json({ message: "This game doesn't exist" });
@@ -138,9 +159,11 @@ router.post("/startgame", isAuthentificated, async (req, res) => {
 
         if (users.length - 1 === userIndex) {
           user.status.playerToKill = users[0].account.firstname;
+          user.status.playerToKillId = users[0].id;
           user.status.action = action[0].action;
         } else {
           user.status.playerToKill = users[userIndex + 1].account.firstname;
+          user.status.playerToKillId = users[userIndex + 1].id;
           user.status.action = action[0].action;
           userIndex++;
         }
@@ -159,6 +182,44 @@ router.post("/startgame", isAuthentificated, async (req, res) => {
     }
   } else {
     res.status(400).json({ message: "This game doesn't exist" });
+  }
+});
+
+//kill a player
+router.post("/kill", isAuthentificated, async (req, res) => {
+  const game = await Game.findOne({ code: req.body.code }).populate({
+    path: "players",
+    populate: { path: "status" },
+  });
+  if (game) {
+    try {
+      const user = await User.findOne({ code: req.body.code }).populate(
+        "status"
+      );
+      const userKilled = await User.findById(
+        user.status.playerToKillId
+      ).populate("status");
+      user.status.playerToKill = userKilled.status.playerToKill;
+      user.status.playerToKillId = userKilled.status.playerToKillId;
+      user.status.action = userKilled.status.action;
+      userKilled.status.alive = false;
+
+      // const lastPlayer = game.players.filter(
+      //   (player) => player.status.alive === true
+      // );
+      if (user.id === user.status.playerToKillId) {
+        user.status.winner = true;
+      }
+
+      await user.save();
+      await userKilled.save();
+
+      res.status(200).json(user.status);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  } else {
+    res.status(400).json({ message: "Error one the kill" });
   }
 });
 

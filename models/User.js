@@ -19,6 +19,8 @@ const userSchema = new Schema({
   },
   status: {
     playerToKill: String,
+    playerToKillId: String,
+    winner: { type: Boolean, default: false },
     action: String,
     randomNumber: Number,
     alive: { type: Boolean, default: true },
