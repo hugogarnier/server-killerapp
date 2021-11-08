@@ -96,17 +96,13 @@ router.post("/deletegame", isAuthentificated, async (req, res) => {
   if (user) {
     if (user.status.admin) {
       try {
-        // const game = await Game.findOne({ code: req.body.code }).populate({
-        //   path: "players",
-        //   populate: { path: "status" },
-        // });
-
-        const users = await User.find({
-          "status.code": req.body.code,
-        }).populate("status");
-
-        const res = users.updateMany({ $set: { "status.code": "" } });
-        console.log(res.acknowledged);
+        await User.updateMany(
+          { "status.code": req.body.code },
+          {
+            "status.code": "",
+            "status.gameId": "",
+          }
+        ).populate("status");
 
         await Game.findOneAndDelete({ code: req.body.code });
         await user.save();
