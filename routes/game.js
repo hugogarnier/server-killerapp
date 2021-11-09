@@ -24,6 +24,7 @@ router.post("/newgame", isAuthentificated, async (req, res) => {
         user.status.gameId = newGame.id;
         user.status.admin = newGame.admin;
         user.status.randomNumber = randomNumber;
+        user.status.winner = false;
         // if several games
         // user.status.push({
         //   admin: newGame.admin,
@@ -66,6 +67,7 @@ router.post("/entergame", isAuthentificated, async (req, res) => {
         user.status.randomNumber = randomNumber;
         user.status.code = game.code;
         user.status.gameId = game.id;
+        user.status.winner = false;
         // if more than one game
         // user.status.push({
         //   code: game.code,

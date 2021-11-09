@@ -139,6 +139,7 @@ io.on("connection", async (socket) => {
           started: game.started,
           playerToKill: user.status.playerToKill,
           action: user.status.action,
+          winner: user.status.winner,
         };
         socket.to("game").emit("startGame", data);
       }
