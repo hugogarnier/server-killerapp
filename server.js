@@ -47,7 +47,7 @@ io.on("connection", async (socket) => {
       const data = {
         previousCode: previousCode,
       };
-      io.to("game").emit("previousCode", data);
+      io.emit("previousCode", data);
     } catch (error) {
       // check error
       //TODO:
