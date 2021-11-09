@@ -50,6 +50,7 @@ io.on("connection", async (socket) => {
       io.to("game").emit("previousCode", data);
     } catch (error) {
       // check error
+      //TODO:
     }
   });
 
