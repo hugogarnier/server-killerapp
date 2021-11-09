@@ -28,6 +28,7 @@ const userSchema = new Schema({
     code: String,
     admin: String,
   },
+  socketId: String,
   token: String,
   hash: String,
 });

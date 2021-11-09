@@ -26,7 +26,8 @@ app.use(userRoutes);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: `https://killer-app-api.herokuapp.com`,
+    origin: `http://192.168.86.247:3000`,
+    // origin: `https://killer-app-api.herokuapp.com`,
     methods: ["GET", "POST"],
   },
 });
@@ -34,7 +35,8 @@ const io = new Server(httpServer, {
 io.on("connection", async (socket) => {
   //when connect
   console.log("New client connected");
-  console.log(socket.id);
+  // console.log(socket.id);
+  socket.join("game");
 
   //send previousCode if one game (to change later)
   socket.on("previousCode", async (senderToken) => {
@@ -58,15 +60,16 @@ io.on("connection", async (socket) => {
       const user = await User.findOne({ token: senderToken }).populate(
         "status"
       );
+      const users = await User.find({ code: code }).populate("status");
       const game = await Game.findOne({ code: code }).populate("players");
-      if (user) {
-        const data = {
-          started: game.started,
-          playerToKill: user.status.playerToKill,
-          action: user.status.action,
-        };
-        socket.to("game").emit("startGame", data);
-      }
+
+      const data = {
+        started: game.started,
+        // playerToKill: user.status.playerToKill,
+        // action: user.status.action,
+        users: users,
+      };
+      io.emit("startGame", data);
     } catch (error) {
       // check error
     }
@@ -95,7 +98,6 @@ io.on("connection", async (socket) => {
   //send User info
   socket.on("userInfo", async (senderToken, code) => {
     try {
-      socket.join("game");
       const user = await User.findOne({ token: senderToken }).populate(
         "status"
       );
