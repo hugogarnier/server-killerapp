@@ -36,8 +36,6 @@ io.on("connection", async (socket) => {
   console.log("New client connected");
   console.log(socket.id);
 
-  socket.join("game");
-
   //send previousCode if one game (to change later)
   socket.on("previousCode", async (senderToken) => {
     try {
@@ -97,6 +95,7 @@ io.on("connection", async (socket) => {
   //send User info
   socket.on("userInfo", async (senderToken, code) => {
     try {
+      socket.join("game");
       const user = await User.findOne({ token: senderToken }).populate(
         "status"
       );
