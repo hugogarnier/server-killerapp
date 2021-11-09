@@ -157,7 +157,7 @@ io.on("connection", async (socket) => {
         winner: user.status.winner,
         alive: user.status.alive,
       };
-      io.to("game").emit("kill", data);
+      socket.to("game").emit("kill", data);
     } catch (error) {
       // check error
     }
