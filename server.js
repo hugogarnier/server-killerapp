@@ -26,7 +26,7 @@ app.use(userRoutes);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: `https://killer-app-api.herokuapp.com`,
     methods: ["GET", "POST"],
   },
 });

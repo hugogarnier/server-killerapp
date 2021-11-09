@@ -6,6 +6,11 @@ const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
 
+// get /
+router.get("/", (req, res) => {
+  res.json({ message: "Welcome to the killer app API 🤪" });
+});
+
 // register route
 router.post("/register", async (req, res) => {
   try {
