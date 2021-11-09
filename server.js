@@ -140,7 +140,7 @@ io.on("connection", async (socket) => {
           playerToKill: user.status.playerToKill,
           action: user.status.action,
         };
-        io.to("game").emit("startGame", data);
+        socket.to("game").emit("startGame", data);
       }
     } catch (error) {
       // check error
