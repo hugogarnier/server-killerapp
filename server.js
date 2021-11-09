@@ -31,31 +31,50 @@ const io = new Server(httpServer, {
   },
 });
 
-let users = [];
-
-const addUser = (userToken, socketId) => {
-  !users.some((user) => user.id === userToken) &&
-    users.push({ userToken, socketId });
-};
-
-const removeUser = (socketId) => {
-  users = users.filter((user) => user.socketId !== socketId);
-};
-
-const getUser = (userId) => {
-  return users.find((user) => user.id === userId);
-};
-
 io.on("connection", async (socket) => {
   //when connect
   console.log("New client connected");
+  console.log(socket.id);
 
-  //take userId and socketId from user
-  // socket.on("addUser", (userToken) => {
-  //   addUser(userToken, socket.id);
-  // });
+  socket.join("game");
 
-  //send previousCode
+  //send previousCode if one game (to change later)
+  socket.on("previousCode", async (senderToken) => {
+    try {
+      const user = await User.findOne({ token: senderToken });
+      const previousCode = user.status.code;
+
+      const data = {
+        previousCode: previousCode,
+      };
+      io.to("game").emit("previousCode", data);
+    } catch (error) {
+      // check error
+      //TODO:
+    }
+  });
+
+  //send User info
+  socket.on("startGame", async (senderToken, code) => {
+    try {
+      const user = await User.findOne({ token: senderToken }).populate(
+        "status"
+      );
+      const game = await Game.findOne({ code: code }).populate("players");
+      if (user) {
+        const data = {
+          started: game.started,
+          playerToKill: user.status.playerToKill,
+          action: user.status.action,
+        };
+        io.to("game").emit("startGame", data);
+      }
+    } catch (error) {
+      // check error
+    }
+  });
+
+  //send previousCodes
   socket.on("previousCodes", async (senderToken, callback) => {
     try {
       const user = await User.findOne({ token: senderToken });
@@ -76,66 +95,81 @@ io.on("connection", async (socket) => {
   });
 
   //send User info
-  socket.on("userInfo", async (senderToken, code, callback) => {
+  socket.on("userInfo", async (senderToken, code) => {
     try {
       const user = await User.findOne({ token: senderToken }).populate(
         "status"
       );
-      const game = await Game.findOne({ code: code });
+      const game = await Game.findOne({ code: code }).populate("players");
       if (user) {
-        const player = await User.findOne({ token: senderToken }).select({
-          status: { $elemMatch: { gameId: game.id } },
-        });
-        callback({
+        // if one game
+        const player = await User.findOne({ token: senderToken }).select(
+          "status"
+        );
+
+        // if several games
+        // const player = await User.findOne({ token: senderToken }).select({
+        //   status: { $elemMatch: { gameId: game.id } },
+        // });
+
+        const data = {
           started: game.started,
           close: game.close,
+          admin: player.status.admin,
           firstname: user.account.firstname,
           lastname: user.account.lastname,
-          alive: player.status[0].alive,
-        });
+          alive: player.status.alive,
+        };
+
+        socket.emit("userInfo", data);
       }
     } catch (error) {
       // check error
     }
   });
 
-  //send notif kill
-  socket.on("sendKill", async ({ senderId, receiverId }) => {
+  //send User info
+  socket.on("startGame", async (senderToken, code) => {
     try {
-      const user = getUser(senderId);
-      const playerKilled = await Player.findOne({ id: receiverId });
-      const newPlayerToKill = playerKilled.playerToKill.account;
-      const newAction = playerKilled.action;
-      io.to(user.socketId).emit("getKill", {
-        newPlayerToKill,
-        newAction,
-      });
+      const user = await User.findOne({ token: senderToken }).populate(
+        "status"
+      );
+      const game = await Game.findOne({ code: code }).populate("players");
+      if (user) {
+        const data = {
+          started: game.started,
+          playerToKill: user.status.playerToKill,
+          action: user.status.action,
+        };
+        io.to("game").emit("startGame", data);
+      }
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      // check error
     }
   });
 
-  //send list of players
-  socket.on("listOfPlayers", async ({ adminId, code }) => {
-    const user = getUser(adminId);
+  //send is user killed
+  socket.on("kill", async (senderToken) => {
     try {
-      const players = await Game.find({ code: code, admin: adminId });
-      io.to(user.socketId).emit("getListOfPlayers", {
-        players,
-      });
+      const user = await User.findOne({ token: senderToken }).populate(
+        "status"
+      );
+      const data = {
+        winner: user.status.winner,
+        alive: user.status.alive,
+      };
+      io.to("game").emit("kill", data);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      // check error
     }
   });
 
   //when disconnect
   socket.on("disconnect", () => {
     console.log("Client disconnected");
-    // removeUser(socket.id);
-    // io.emit("getUsers", users);
   });
 });
 
 httpServer.listen(process.env.PORT || 4000, () =>
-  console.log("Server running")
+  console.log(`Server running on port ${process.env.PORT || 4000} `)
 );

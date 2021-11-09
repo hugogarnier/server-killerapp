@@ -1,0 +1,18 @@
+[
+  {
+    "action": "action 1",
+    "number": 1
+  },
+  {
+    "action": "action 2",
+    "number": 2
+  },
+  {
+    "action": "action 3",
+    "number": 3
+  },
+  {
+    "action": "action 4",
+    "number": 4
+  }
+]
