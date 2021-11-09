@@ -101,6 +101,7 @@ router.post("/deletegame", isAuthentificated, async (req, res) => {
           {
             "status.code": "",
             "status.gameId": "",
+            "status.admin": "",
           }
         ).populate("status");
 
