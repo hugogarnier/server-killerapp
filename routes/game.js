@@ -9,7 +9,9 @@ router.post("/newgame", isAuthentificated, async (req, res) => {
   const isGameExist = await Game.findOne({ code: req.body.code });
 
   if (!isGameExist) {
-    const user = await User.findById(req.user.id).populate("status");
+    const user = await User.findById(req.user.id)
+      .populate("status")
+      .select("status");
     if (user.status.gameId) {
       res.status(400).json({ message: "You are already in a game" });
     } else {
