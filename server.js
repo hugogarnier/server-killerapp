@@ -26,8 +26,8 @@ app.use(userRoutes);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: `http://192.168.86.247:3000`,
-    // origin: `https://killer-app-api.herokuapp.com`,
+    // origin: `https://192.168.86.33:3000`,
+    origin: `https://killer-app-api.herokuapp.com`,
     methods: ["GET", "POST"],
   },
 });
@@ -69,7 +69,7 @@ io.on("connection", async (socket) => {
         // action: user.status.action,
         users: users,
       };
-      io.emit("startGame", data);
+      io.to("game").emit("startGame", data);
     } catch (error) {
       // check error
     }
